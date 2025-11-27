@@ -1,0 +1,37 @@
+.header {
+  inset-inline: 0;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--card-bg);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: var(--header-height);
+  font-family: var(--font-family);
+}
+
+.nav-links, .auth-actions {
+  display: flex;
+  gap: var(--gap);
+}
+
+.nav-links a, .auth-actions a {
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-links a:hover:not(.active), .auth-actions a:hover {
+  background-color: rgba(37, 99, 235, 0.1);
+  color: var(--primary-color);
+}
+
+.nav-links a.active {
+  font-weight: bold;
+  border-bottom: 2px solid var(--primary-color);
+}

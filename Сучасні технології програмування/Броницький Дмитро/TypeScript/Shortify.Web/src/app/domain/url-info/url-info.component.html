@@ -1,0 +1,47 @@
+<div class="url-info-container" *ngIf="urlInfo">
+  <h2>URL Details</h2>
+
+  <div class="field">
+    <span class="label">Original URL:</span>
+    <a [href]="urlInfo.originalUrl" target="_blank">{{ urlInfo.originalUrl }}</a>
+  </div>
+
+  <div class="field">
+    <span class="label">Short URL:</span>
+    <a (click)="viewOriginal(urlInfo.id)" target="_blank">{{ urlInfo.shortenedUrl }}</a>
+  </div>
+
+  <div class="field">
+    <span class="label">Title:</span>
+    <span>{{ urlInfo.title }}</span>
+  </div>
+
+  <div class="field">
+    <span class="label">Description:</span>
+    <span>{{ urlInfo.description }}</span>
+  </div>
+
+<div class="field" *ngIf="userInfo?.userName">
+  <span class="label">Created By:</span>
+  <span>{{ userInfo.userName }} ({{ userInfo.email }})</span>
+</div>
+
+  <div class="field">
+    <span class="label">Created At:</span>
+    <span>{{ urlInfo.createdAt | date:'short' }}</span>
+  </div>
+
+  <div class="field" *ngIf="urlInfo.updatedBy">
+    <span class="label">Updated By:</span>
+    <span>{{ urlInfo.updatedBy }}</span>
+  </div>
+
+  <div class="field" *ngIf="urlInfo.updatedAt">
+    <span class="label">Updated At:</span>
+    <span>{{ urlInfo.updatedAt | date:'short' }}</span>
+  </div>
+</div>
+
+<div *ngIf="!urlInfo">
+  <p>Loading data...</p>
+</div>

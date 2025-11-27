@@ -1,0 +1,28 @@
+<form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+  <h1 class="auth-title">Login</h1>
+
+  <label class="input-label">
+    Email
+    <input type="text" formControlName="email" class="input" autocomplete="email" />
+  </label>
+  <div class="error" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid">
+    Email is required.
+  </div>
+
+  <label class="input-label">
+    Password
+    <input type="password" formControlName="password" class="input" autocomplete="current-password" />
+  </label>
+  <div class="error" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
+    Password is required.
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn btn-secondary" (click)="goToRegistration()">Register</button>
+    <button type="submit" class="btn btn-secondary" [disabled]="loginForm.invalid">Login</button>
+  </div>
+
+  <div class="server-error" *ngIf="serverError">
+    {{ serverError }}
+  </div>
+</form>

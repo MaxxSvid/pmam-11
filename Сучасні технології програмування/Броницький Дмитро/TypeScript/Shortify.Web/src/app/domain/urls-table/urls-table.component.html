@@ -1,0 +1,41 @@
+<div class="urls-table-container">
+
+  <div *ngIf="currentUser$ | async as user" class="add-url-section">
+    <input name="originURL" type="text" [(ngModel)]="addLink.OriginURL" placeholder="Enter URL" />
+    <input name="title" type="text" [(ngModel)]="addLink.Title" placeholder="Enter title" />
+    <input name="description" type="text" [(ngModel)]="addLink.Description" placeholder="Enter description" />
+    <button (click)="addUrl()">Add</button>
+    <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Original URL</th>
+        <th>Short URL</th>
+        <th>Created Date</th>
+        <th scope="col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let url of urls">
+        <td>{{ url.originalUrl }}</td>
+        <td (click)="viewOriginal(url.id)" style="cursor: pointer; color: blue; text-decoration: underline;">
+          {{ url.shortenedUrl }}
+        </td>
+        <td>{{ url.createdAt | date:'short' }}</td>
+        <td>
+          <ng-container *ngIf="currentUser$ | async as user">
+            <button *ngIf="user.role === 'Admin' || user.id === url.createdBy" (click)="deleteUrl(url)">
+              Delete
+            </button>
+            <button (click)="viewDetails(url.id)">
+              View Details
+            </button>
+          </ng-container>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>

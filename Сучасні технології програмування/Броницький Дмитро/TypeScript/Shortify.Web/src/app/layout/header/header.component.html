@@ -1,0 +1,11 @@
+<header class="header">
+  <nav class="nav-links" aria-label="Main navigation">
+    <a routerLink="/urls-table" routerLinkActive="active">Urls-Table</a>
+    <a (click)="redirectService.redirectToAbout()">About</a>
+  </nav>
+  <div class="auth-actions">
+    <a *ngIf="!(currentUser$ | async)" routerLink="/login">Login</a>
+    <a *ngIf="!(currentUser$ | async)" routerLink="/registration">Register</a>
+    <a *ngIf="(currentUser$ | async)" (click)="logout()">Logout</a>
+  </div>
+</header>
