@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Decision Support Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+    <!-- Ліва панель навігації -->
+    <aside class="sidebar">
+        <div class="sidebar__logo">
+            <div class="logo-icon">DS</div>
+            <span class="logo-text">Decision Support</span>
+        </div>
+
+        <nav class="sidebar__nav">
+            <a href="#" class="nav-item nav-item--active">Dashboard</a>
+            <a href="#" class="nav-item">Projects</a>
+            <a href="#" class="nav-item">Scenarios</a>
+            <a href="#" class="nav-item">Reports</a>
+            <a href="#" class="nav-item">Settings</a>
+        </nav>
+
+        <div class="sidebar__footer">
+            <div class="user">
+                <div class="user-avatar">M</div>
+                <div class="user-info">
+                    <div class="user-name">Analyst</div>
+                    <div class="user-role">System Analysis</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Основний контент -->
+    <main class="main">
+        <header class="main__header">
+            <div>
+                <h1>Decision Support Dashboard</h1>
+                <p class="subtitle">
+                    Multi-criteria evaluation overview &amp; project performance.
+                </p>
+            </div>
+            <div class="header__controls">
+                <select class="select">
+                    <option>Scenario: Default</option>
+                    <option>Scenario: Optimistic</option>
+                    <option>Scenario: Pessimistic</option>
+                </select>
+                <button class="btn btn--primary">Generate Report</button>
+            </div>
+        </header>
+
+        <!-- Верхні аналітичні картки -->
+        <section class="cards-row">
+            <article class="card card--kpi">
+                <div class="card-label">Best Alternative</div>
+                <div class="card-value">Project C</div>
+                <div class="card-meta">SAW score: 0.87</div>
+                <div class="card-bar">
+                    <div class="card-bar__fill" style="width: 87%;"></div>
+                </div>
+            </article>
+
+            <article class="card card--kpi">
+                <div class="card-label">Average Risk Level</div>
+                <div class="card-value">4.2</div>
+                <div class="card-meta">Scale: 1 (low) – 10 (high)</div>
