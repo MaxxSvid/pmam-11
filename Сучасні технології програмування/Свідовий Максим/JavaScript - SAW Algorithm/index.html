@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Система підтримки прийняття рішень (SAW)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1, h2 {
+            margin-bottom: 10px;
+        }
+        table {
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        input[type="number"] {
+            width: 60px;
+        }
+        .btn {
+            padding: 6px 12px;
+            margin: 4px 0;
+            cursor: pointer;
+        }
+        .result-row {
+            background-color: #e8f7e8;
+        }
+        .error {
+            color: red;
+        }
+        .log {
+            font-size: 14px;
+            white-space: pre-line;
+            background: #fafafa;
+            border: 1px dashed #ccc;
+            padding: 8px;
+            max-width: 900px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Система підтримки прийняття рішень (метод SAW)</h1>
+<p>
+    Приклад на JavaScript для дисципліни <b>“Сучасні технології програмування”</b> . Задача – обрати найкращий проєкт за кількома критеріями.
+</p>
+
+<h2>Критерії</h2>
+<p>Тип критерію: <b>benefit</b> – чим більше значення, тим краще; <b>cost</b> – чим менше, тим краще.</p>
+
+<table id="criteria-table">
+    <thead>
+    <tr>
+        <th>Код</th>
+        <th>Назва критерію</th>
+        <th>Тип</th>
+        <th>Вага</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Рендериться з JavaScript -->
+    </tbody>
+</table>
+
+<button class="btn" id="normalize-weights-btn">Нормувати ваги</button>
+<span id="weights-error" class="error"></span>
+
+<h2>Альтернативи (проєкти)</h2>
+<table id="alternatives-table">
+    <thead>
+    <tr>
+        <th>Альтернатива</th>
+        <!-- динамічно додадуться стовпці критеріїв -->
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Рендериться з JavaScript -->
+    </tbody>
+</table>
+
+<button class="btn" id="calculate-btn">Обчислити рейтинг альтернатив</button>
+<span id="calc-error" class="error"></span>
+
+<h2>Результати</h2>
+<div id="results"></div>
+
+<h2>Журнал обчислень</h2>
+<div id="log" class="log"></div>
+
+<script>
+// -----------------------------
+// 1. Моделі даних
+// -----------------------------
+
+// Опис одного критерію
+class Criterion {
+    /**
+     * @param {string} id - код критерію (C1, C2, ...)
+     * @param {string} name - назва
+     * @param {"benefit"|"cost"} type - тип критерію
+     * @param {number} weight - вага (може бути не нормованою)
+     */
+    constructor(id, name, type, weight) {
+        this.id = id;
+        this.name = name;
+        this.type = type;
+        this.weight = weight;
+    }
+}
+
+// Опис однієї альтернативи (проєкту)
+class Alternative {
+    /**
+     * @param {string} name - назва альтернативи
+     * @param {Object<string, number>} values - значення по кожному критерію (id критерію -> значення)
+     */
+    constructor(name, values) {
+        this.name = name;
+        this.values = values;
+        this.score = 0; // підсумковий рейтинг (SAW)
+    }
+}
+
+// -----------------------------
+// 2. Вхідні дані (можна змінювати під свою задачу)
+// -----------------------------
+
+/**
+ * Початковий набір критеріїв.
+ * Приклад: вибір проєкту розробки системи.
+ */
+const criteria = [
+    new Criterion("C1", "Очікуваний прибуток, тис. $/рік", "benefit", 0.4),
+    new Criterion("C2", "Термін реалізації, міс.", "cost", 0.2),
+    new Criterion("C3", "Рівень ризику (1-10)", "cost", 0.2),
+    new Criterion("C4", "Стратегічна важливість (1-10)", "benefit", 0.2)
+];
+
+/**
+ * Альтернативи – можливі проєкти.
+ * Для реальної роботи можна зчитувати з форми або сервера.
+ */
+const alternatives = [
+    new Alternative("Проєкт A", { C1: 120, C2: 10, C3: 6, C4: 8 }),
+    new Alternative("Проєкт B", { C1: 90,  C2: 7,  C3: 4, C4: 6 }),
+    new Alternative("Проєкт C", { C1: 150, C2: 14, C3: 8, C4: 9 }),
+    new Alternative("Проєкт D", { C1: 80,  C2: 6,  C3: 3, C4: 5 })
+];
+
+// -----------------------------
+// 3. DOM-елементи
+// -----------------------------
+
+const criteriaTableBody = document.querySelector("#criteria-table tbody");
+const alternativesTableHeadRow = document.querySelector("#alternatives-table thead tr");
+const alternativesTableBody = document.querySelector("#alternatives-table tbody");
+
+const normalizeWeightsBtn = document.getElementById("normalize-weights-btn");
+const calculateBtn = document.getElementById("calculate-btn");
+
+const weightsErrorSpan = document.getElementById("weights-error");
+const calcErrorSpan = document.getElementById("calc-error");
+
+const resultsDiv = document.getElementById("results");
+const logDiv = document.getElementById("log");
+
+// -----------------------------
+// 4. Ініціалізація інтерфейсу
+// -----------------------------
+
+/**
+ * Створюємо рядки таблиці критеріїв з полями вводу для ваг.
+ */
+function renderCriteriaTable() {
+    criteriaTableBody.innerHTML = "";
+
+    criteria.forEach((crit, index) => {
+        const tr = document.createElement("tr");
+
+        const tdId = document.createElement("td");
+        tdId.textContent = crit.id;
+
+        const tdName = document.createElement("td");
+        tdName.textContent = crit.name;
+
+        const tdType = document.createElement("td");
+        tdType.textContent = crit.type === "benefit" ? "користь" : "витрати";
+
+        const tdWeight = document.createElement("td");
+        const input = document.createElement("input");
+        input.type = "number";
+        input.step = "0.01";
+        input.min = "0";
+        input.value = crit.weight.toString();
+        input.dataset.index = index.toString(); // індекс критерію в масиві
+        tdWeight.appendChild(input);
+
+        tr.appendChild(tdId);
+        tr.appendChild(tdName);
+        tr.appendChild(tdType);
+        tr.appendChild(tdWeight);
+
+        criteriaTableBody.appendChild(tr);
+    });
+}
+
+/**
+ * Рендеримо заголовок таблиці альтернатив (додаємо стовпці критеріїв).
+ */
+function renderAlternativesHeader() {
+    // Перший стовпець уже є ("Альтернатива"), очищуємо решту
+    while (alternativesTableHeadRow.children.length > 1) {
+        alternativesTableHeadRow.removeChild(alternativesTableHeadRow.lastChild);
+    }
+
+    criteria.forEach(crit => {
+        const th = document.createElement("th");
+        th.textContent = `${crit.id}: ${crit.name}`;
+        alternativesTableHeadRow.appendChild(th);
+    });
+}
+
+/**
+ * Створюємо таблицю значень альтернатив по критеріях.
+ */
+function renderAlternativesTable() {
+    alternativesTableBody.innerHTML = "";
+
+    alternatives.forEach(alt => {
+        const tr = document.createElement("tr");
+
+        const tdName = document.createElement("td");
+        tdName.textContent = alt.name;
+        tr.appendChild(tdName);
+
+        criteria.forEach(crit => {
+            const tdVal = document.createElement("td");
+            const val = alt.values[crit.id];
+            tdVal.textContent = val != null ? val.toString() : "-";
+            tr.appendChild(tdVal);
+        });
+
+        alternativesTableBody.appendChild(tr);
+    });
+}
+
+// -----------------------------
+// 5. Обробка ваг критеріїв
+// -----------------------------
+
+/**
+ * Зчитуємо ваги з інпутів і оновлюємо критерії.
+ * Повертає true, якщо успішно.
+ */
+function readWeightsFromInputs() {
+    const inputs = criteriaTableBody.querySelectorAll("input[type='number']");
+    let sum = 0;
+
+    inputs.forEach(input => {
+        const index = Number(input.dataset.index);
+        const val = Number(input.value);
+        if (!isNaN(val) && val >= 0) {
+            criteria[index].weight = val;
+            sum += val;
+        }
+    });
+
+    if (sum === 0) {
+        weightsErrorSpan.textContent = "Сума ваг не може бути 0.";
+        return false;
+    }
+
+    weightsErrorSpan.textContent = "";
+    return true;
+}
+
+/**
+ * Нормуємо ваги так, щоб їх сума була 1.
+ */
+function normalizeWeights() {
+    const ok = readWeightsFromInputs();
+    if (!ok) return;
+
+    let sum = 0;
+    criteria.forEach(c => sum += c.weight);
+
+    criteria.forEach((c, i) => {
+        c.weight = c.weight / sum;
+        // оновлюємо інпут в таблиці
+        const input = criteriaTableBody.querySelector(`input[data-index='${i}']`);
+        if (input) {
+            input.value = c.weight.toFixed(3);
+        }
+    });
+
+    log(`Ваги нормовано. Сума ваг = 1.`);
+}
+
+/**
+ * Допоміжна функція – логування тексту в блок "Журнал обчислень".
+ */
+function log(message) {
+    const time = new Date().toLocaleTimeString();
+    logDiv.textContent += `[${time}] ${message}\n`;
+}
+
+// -----------------------------
+// 6. Алгоритм SAW
+// -----------------------------
+
+/**
+ * Нормалізуємо матрицю рішень по кожному критерію.
+ * Повертає обʼєкт: { altName -> { critId -> normalizedValue } }.
+ */
+function normalizeDecisionMatrix() {
+    const normalized = {};
+
+    // Для кожного критерію обчислюємо min/max
+    criteria.forEach(crit => {
+        let min = Infinity;
+        let max = -Infinity;
+
+        alternatives.forEach(alt => {
+            const val = alt.values[crit.id];
+            if (val < min) min = val;
+            if (val > max) max = val;
+        });
+
+        // Нормалізація по типу критерію
+        alternatives.forEach(alt => {
+            if (!normalized[alt.name]) {
+                normalized[alt.name] = {};
+            }
+            const val = alt.values[crit.id];
+
+            let normVal;
+            if (crit.type === "benefit") {
+                // чим більше, тим краще
+                normVal = (val - min) / (max - min);
+            } else {
+                // cost – чим менше, тим краще
+                normVal = (max - val) / (max - min);
+            }
+
+            normalized[alt.name][crit.id] = normVal;
+        });
+    });
+
+    return normalized;
+}
+
+/**
+ * Обчислюємо інтегральну оцінку (score) кожної альтернативи.
+ */
+function calculateScores() {
+    // Спершу нормалізуємо ваги (якщо користувач не натиснув окремо)
+    const ok = readWeightsFromInputs();
+    if (!ok) {
+        calcErrorSpan.textContent = "Неможливо обчислити: спочатку виправте ваги.";
+        return;
+    }
+    calcErrorSpan.textContent = "";
+
+    // Нормована матриця
+    const norm = normalizeDecisionMatrix();
+    log("Виконано нормалізацію матриці рішень.");
+
+    // Обчислення SAW-оцінки
+    alternatives.forEach(alt => {
+        let score = 0;
+        criteria.forEach(crit => {
+            const w = crit.weight;
+            const r = norm[alt.name][crit.id];
+            score += w * r;
+        });
+        alt.score = score;
+    });
+
+    log("Обчислено зважені рейтинги альтернатив.");
+    renderResults();
+}
+
+/**
+ * Виводимо результати ранжування.
+ */
+function renderResults() {
+    // Сортуємо альтернативи за спаданням score
+    const sorted = [...alternatives].sort((a, b) => b.score - a.score);
+
+    let html = "<table><thead><tr>" +
+        "<th>Місце</th><th>Альтернатива</th><th>Рейтинг (SAW)</th>" +
+        "</tr></thead><tbody>";
+
+    sorted.forEach((alt, index) => {
+        const cls = index === 0 ? " class='result-row'" : "";
+        html += `<tr${cls}><td>${index + 1}</td><td>${alt.name}</td><td>${alt.score.toFixed(4)}</td></tr>`;
+    });
+
+    html += "</tbody></table>";
+
+    resultsDiv.innerHTML = html;
+
+    if (sorted.length > 0) {
+        log(`Найкраща альтернатива: "${sorted[0].name}" з рейтингом ${sorted[0].score.toFixed(4)}.`);
+    }
+}
+
+// -----------------------------
+// 7. Обробники подій
+// -----------------------------
+
+normalizeWeightsBtn.addEventListener("click", () => {
+    normalizeWeights();
+});
+
+calculateBtn.addEventListener("click", () => {
+    calculateScores();
+});
+
+// -----------------------------
+// 8. Стартова ініціалізація
+// -----------------------------
+
+renderCriteriaTable();
+renderAlternativesHeader();
+renderAlternativesTable();
+log("Система ініціалізована. Задайте/скоригуйте ваги критеріїв і натисніть 'Обчислити рейтинг альтернатив'.");
+</script>
+
+</body>
+</html>
